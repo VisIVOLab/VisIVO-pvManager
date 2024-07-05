@@ -36,10 +36,28 @@ void Manager::start()
     }
     qInfo() << "Server listening on port" << this->port;
 
+    // GET /server
+    this->http->route(u"/server"_s, QHttpServerRequest::Method::Get,
+                      [this](const QHttpServerRequest &req) { return this->routeGetServer(req); });
+    qInfo() << "Configured GET /server";
+
     // POST /server
     this->http->route(u"/server"_s, QHttpServerRequest::Method::Post,
                       [this](const QHttpServerRequest &req) { return this->routePostServer(req); });
     qInfo() << "Configured POST /server";
+}
+
+QHttpServerResponse Manager::routeGetServer(const QHttpServerRequest &req)
+{
+    QJsonObject body;
+    auto state = this->pvserver->state();
+    body["state"_L1] = QVariant::fromValue(state).toString();
+    if (state == QProcess::Running) {
+        body["start-time"_L1] = this->pvserver->startedAt().toString(Qt::ISODate);
+        body["server-port"_L1] = this->pvserver->serverPort();
+    }
+
+    return QHttpServerResponse(body);
 }
 
 QHttpServerResponse Manager::routePostServer(const QHttpServerRequest &req)

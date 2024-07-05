@@ -21,6 +21,7 @@ private:
     QHttpServer *http;
     PVServer *pvserver;
 
+    QHttpServerResponse routeGetServer(const QHttpServerRequest &req);
     QHttpServerResponse routePostServer(const QHttpServerRequest &req);
 };
 

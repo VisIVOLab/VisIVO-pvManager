@@ -26,6 +26,7 @@ void PVServer::start(int port)
     args << u"--server-port"_s << QString::number(port);
     this->proc->setArguments(args);
 
+    this->port = port;
     this->startTime = QDateTime::currentDateTimeUtc();
     this->logFile = QString("pvserver-%1.log").arg(this->startTime.toString(Qt::ISODate));
     this->proc->setStandardOutputFile(this->logFile);
@@ -36,4 +37,14 @@ void PVServer::start(int port)
 QProcess::ProcessState PVServer::state() const
 {
     return this->proc->state();
+}
+
+QDateTime PVServer::startedAt() const
+{
+    return this->startTime;
+}
+
+int PVServer::serverPort() const
+{
+    return this->port;
 }

@@ -14,10 +14,12 @@ public:
 
     void start(int port);
     QProcess::ProcessState state() const;
+    QDateTime startedAt() const;
+    int serverPort() const;
 
 private:
     QProcess *proc;
-    uint port;
+    int port;
     QString filepath;
     QString logFile;
     QDateTime startTime;
