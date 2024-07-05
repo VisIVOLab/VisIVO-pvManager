@@ -1,0 +1,3 @@
+#pragma once
+
+#define VISIVO_MANAGER_VERSION_STRING "@VisIVO-pvManager_VERSION@"
