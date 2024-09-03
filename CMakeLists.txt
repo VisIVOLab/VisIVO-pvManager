@@ -29,6 +29,7 @@ configure_file(src/version.h.in version.h @ONLY)
 
 qt_add_executable(pvmanager
     ${PROJECT_SOURCE}
+    src/Service.h src/Service.cpp
 )
 
 target_compile_definitions(pvmanager PRIVATE $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>)
