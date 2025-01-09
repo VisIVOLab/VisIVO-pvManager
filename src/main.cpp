@@ -13,6 +13,7 @@ using namespace Qt::Literals::StringLiterals;
 
 void signalHandler(int signal)
 {
+    qInfo() << "Signal" << sys_signame[signal] << "received";
     QCoreApplication::instance()->quit();
 }
 
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
         // showHelp also exits the program
     }
 
-    bool okPort;
+    bool okPort = false;
     const int port = parser.value(optPort).toInt(&okPort);
     if (!okPort || port <= 0 || port > 65535) {
         qCritical() << "Invalid port value:" << port;

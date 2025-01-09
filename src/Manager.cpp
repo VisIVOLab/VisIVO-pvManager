@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTcpServer>
 
 using namespace Qt::Literals::StringLiterals;
 
@@ -21,13 +22,13 @@ Manager::Manager(int port, const QString &pvserverFilePath, const QString &workD
     this->pvserver = new PVServer(pvserverFilePath, workDirPath, this);
     this->service = new Service(workDirPath, this);
     this->http = new QHttpServer(this);
-    this->http->afterRequest([](const QHttpServerRequest &req, QHttpServerResponse &&resp) {
-        qInfo().noquote() << "[" << req.remoteAddress().toString() << "]"
-                          << QVariant::fromValue(resp.statusCode()).toInt()
-                          << QVariant::fromValue(req.method()).toString().toUpper()
-                          << req.url().path();
-        return std::move(resp);
-    });
+    this->http->addAfterRequestHandler(
+            this->http, [](const QHttpServerRequest &req, QHttpServerResponse &resp) {
+                qInfo().noquote() << "[" << req.remoteAddress().toString() << "]"
+                                  << QVariant::fromValue(resp.statusCode()).toInt()
+                                  << QVariant::fromValue(req.method()).toString().toUpper()
+                                  << req.url().path();
+            });
 }
 
 Manager::~Manager()
@@ -37,9 +38,13 @@ Manager::~Manager()
 
 void Manager::start()
 {
-    if (!this->http->listen(QHostAddress::AnyIPv4, this->port)) {
+    auto tcpServer = std::make_unique<QTcpServer>();
+    if (!tcpServer->listen(QHostAddress::AnyIPv4, this->port)
+        || !this->http->bind(tcpServer.get())) {
         qFatal() << "Could not listen on port" << this->port;
     }
+    tcpServer.release();
+    // QHttpServer::bind takes ownership of QTcpServer
     qInfo() << "Manager listening on port" << this->port;
 
     // GET /info
@@ -68,15 +73,12 @@ void Manager::configureMPI()
 {
     QProcess whereis;
     whereis.setProgram(u"whereis"_s);
-
-    QStringList args;
-    args << u"-b"_s << u"mpirun"_s;
-    whereis.setArguments(args);
+    whereis.setArguments({ u"-b"_s, u"mpirun"_s });
     whereis.start();
 
     if (whereis.waitForFinished()) {
         // output = "mpirun: [path]"
-        this->mpirun = whereis.readAllStandardOutput().simplified().split(':')[1].simplified();
+        this->mpirun = whereis.readAllStandardOutput().split(':')[1].simplified();
         if (!this->mpirun.isEmpty()) {
             qInfo().noquote() << "Found mpirun:" << this->mpirun;
         } else {
